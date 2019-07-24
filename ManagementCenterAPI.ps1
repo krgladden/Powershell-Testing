@@ -1,8 +1,8 @@
 Function Query-ManagementCenter{
 [cmdletbinding()]
 param(
-[parameter(Mandatory,
-ValueFromPipeline)]
+[parameter(Mandatory=$true)]
+[parameter(ValueFromPipeline)]
 [string[]]
 $MCSite,
 
@@ -11,19 +11,17 @@ $MCSite,
 $port=8082,
 
 
-[parameter(Mandatory,
-ValueFromPipeline)]
-[hashtable]$APIHeader
-
-
-
-[parameter(Mandatory,
-ValueFromPipeline)]
+[parameter(Mandatory=$true)]
+[parameter(ValueFromPipeline)]
 [validateset("Devices","System","Jobs")]
 [string[]]
 $APIcall,
 
 
+
+[parameter(Mandatory=$true)]
+[parameter(ValueFromPipeline)]
+[hashtable]$APIHeader
 
 
 )
