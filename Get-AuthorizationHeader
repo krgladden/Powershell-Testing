@@ -1,9 +1,16 @@
-function Get-AuthorizationHeader
-{
+Function Invoke-BasicAuth{
 [cmdletbinding()]
 param(
-    [Parameter(
-            valuefrompipeline)]
-    [PSCredential]
-    $Credential
+[parameter(mandatory=$true)]
+[ValidateNotNullOrEmpty()]
+[System.Management.Automation.PSCredential]
+[System.Management.Automation.credential()]
+$Credential = [System.Management.Automation.PSCredential]::empty
 )
+process{
+$pw = $Credential.GetNetworkCredential().Password
+$user = $Credential.Username
+$pair = "${user}:${pw}"
+$RESTheaders = @{ "Authorization" = "Basic " + [System.Convert]::tobase64string([System.text.encoding]::ASCII.GetBytes($pair))}
+$RESTheaders}
+        }
