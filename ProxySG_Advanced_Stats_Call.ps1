@@ -189,7 +189,6 @@ add-member -InputObject $psobject -MemberType NoteProperty -Name $header -value 
 $psobject | format-table
 
 
-$proxyhosts = "naeanrfkpc90a"
 
 while (1 -ne 0){
 foreach($Proxy in $ProxyHosts){
