@@ -1,33 +1,54 @@
+Function Invoke-BasicAuth{
+[cmdletbinding()]
+param(
+[parameter(mandatory=$true)]
+[ValidateNotNullOrEmpty()]
+[System.Management.Automation.PSCredential]
+[System.Management.Automation.credential()]
+$Credential = [System.Management.Automation.PSCredential]::empty
+)
+process{
+$pw = $Credential.GetNetworkCredential().Password
+$user = $Credential.Username
+$pair = "${user}:${pw}"
+$RESTheaders = @{ "Authorization" = "Basic " + [System.Convert]::tobase64string([System.text.encoding]::ASCII.GetBytes($pair))}
+$RESTheaders}
+        }
+
+
+
+
 Function Query-ManagementCenter{
 [cmdletbinding()]
 param(
-[parameter(Mandatory=$true)]
 [parameter(ValueFromPipeline)]
+[validateset("NRFK","SDNI","All")]
 [string[]]
-$MCSite,
-
-[parameter(ValueFromPipeline)]
-[int]
-$port=8082,
+$Site="All",
 
 
-[parameter(Mandatory=$true)]
-[parameter(ValueFromPipeline)]
+
+[parameter(Mandatory,
+ValueFromPipeline)]
 [validateset("Devices","System","Jobs")]
 [string[]]
 $APIcall,
 
 
 
-[parameter(Mandatory=$true)]
-[parameter(ValueFromPipeline)]
+[parameter(Mandatory,
+ValueFromPipeline)]
 [hashtable]$APIHeader
-
 
 )
 process{
 
 
+Switch ($Site){
+"all" {$MCsite = @('sdni**', 'nrfk**'); write-verbose "All Sites Selected."}
+"nrfk" {$MCsite = 'nrfk**'; write-verbose "MCsite NRFK Selected"}
+"sdni" {$MCsite = 'sdni**'; write-verbose "MCsite SDNI Selected"}
+       }
 
 Switch ($APIcall){
         "Devices" {$APIset = 'devices/health'
@@ -38,14 +59,40 @@ Switch ($APIcall){
                   }
     }	
 
-write-verbose "$MCSite(s) selected."
+write-verbose "$Site(s) selected."
 write-verbose "$APIcall check called."
 
 Foreach ($mc in $MCsite){
 write-host "$($mc) being queried."
-$APIData = Invoke-restmethod -Uri "https://$($MC):$($port)/api/$APIset" -Headers $APIHeader -contenttype "application/json"
+$APIData = Invoke-restmethod -Uri "https://$($MC):8082/api/$APIset" -Headers $APIHeader -contenttype "application/json"
 $DataCalled += $APIdata
         }
 $DataCalled
     }
 }
+
+add-type @"
+using System.Net;
+using System.Security.Cryptography.X509Certificates;
+public class TrustAllCertsPolicy : ICertificatePolicy {
+    public bool CheckValidationResult(
+        ServicePoint srvPoint, X509Certificate certificate,
+        WebRequest request, int certificateProblem) {
+        return true;
+    }
+}
+"@
+[System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
+
+$DataCalled = $null
+$SelectedData = $Null
+$APIData = $Null
+$SelHost = @{Name ="Hostname";Expression={$_.name}}
+
+$headers = (Invoke-BasicAuth)
+
+
+$Datacalled = Query-ManagementCenter -APIHeader $headers -APIcall Devices
+
+$Datacalled | Select-Object -property $SelHost -ExpandProperty Health | Out-GridView
+
